@@ -1,0 +1,5 @@
+# Agent / HTTP 服务（实测环境：Python 3.14.5，版本为本机 .venv 实际安装版本）
+fastapi==0.141.1
+pydantic==2.13.5
+uvicorn==0.54.0
+openai-agents==0.22.3

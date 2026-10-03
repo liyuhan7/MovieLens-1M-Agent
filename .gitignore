@@ -1,0 +1,34 @@
+# ---------- Python ----------
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+
+# ---------- 密钥 ----------
+# 只提交 agent/.env.example；真实 key 放 agent/.env
+.env
+agent/.env
+
+# ---------- 原始数据 ----------
+# MovieLens 1M 许可禁止再分发，按 README「获取原始数据」自行下载后放入 data/
+data/*.dat
+data/*.zip
+
+# ---------- 大型下载物 ----------
+# 镜像构建用的 Hadoop 发行包（约 697MB），按需下载到 runtime/
+runtime/hadoop-*.tar.gz
+
+# ---------- 运行产物 ----------
+outputs/
+*.log
+
+# ---------- 构建产物 ----------
+# 编译产生的 class/jar 与从镜像提取的依赖 jar；清单见 hadoop/deps.manifest.txt
+hadoop/build/
+
+# ---------- 编辑器 / 系统 ----------
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini

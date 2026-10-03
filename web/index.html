@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MovieLens 数据治理 Agent · 基于 Hadoop 的数据清洗与五维质量评估</title>
+<style>
+:root{
+  --bg:#eef1f6; --panel:#fff; --ink:#1b2534; --sub:#64748b; --line:#e4e9f1;
+  --blue:#2563eb; --blue-l:#9db9f0; --ok:#16a34a; --bad:#dc2626; --chip:#f1f5fb;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:"Segoe UI","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--ink);font-size:14px}
+
+/* ---------- header ---------- */
+header{background:#10243f;color:#fff;display:flex;align-items:center;gap:14px;padding:12px 22px;flex-wrap:wrap}
+.logo{width:40px;height:40px;border-radius:10px;background:#1c3a66;display:flex;align-items:center;justify-content:center;font-size:21px;flex:none}
+header h1{font-size:19px}header .sub{font-size:12px;color:#9db4d6;margin-top:2px}
+.hmeta{display:flex;gap:10px;margin-left:auto;flex-wrap:wrap}
+.hchip{background:#17345f;border:1px solid #2a4d80;color:#cfe0f8;border-radius:8px;padding:6px 12px;font-size:12px}
+.hchip b{color:#fff;font-weight:600}
+
+/* ---------- layout ---------- */
+.layout{display:grid;grid-template-columns:290px minmax(430px,1fr) 470px;gap:14px;padding:14px 18px;align-items:start}
+@media (max-width:1360px){.layout{grid-template-columns:270px 1fr 430px}}
+@media (max-width:1120px){.layout{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px}
+.card+.card{margin-top:12px}
+.card h3{font-size:14px;margin-bottom:12px;display:flex;align-items:center;gap:6px}
+
+/* ---------- left: steps ---------- */
+.banner{display:flex;gap:10px;align-items:center;margin-bottom:12px}
+.banner .big{font-size:15px;font-weight:600}
+.banner .t{font-size:11px;color:var(--sub)}
+.dot{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;flex:none}
+.dot.idle{background:#cbd5e1}.dot.ok{background:var(--ok)}.dot.run{background:var(--blue)}.dot.bad{background:var(--bad)}
+.steps{margin-left:16px}
+.step{display:flex;gap:10px;padding:8px 0;position:relative}
+.step::before{content:"";position:absolute;left:11px;top:28px;bottom:-8px;width:2px;background:#e2e8f0}
+.step:last-child::before{display:none}
+.si{width:24px;height:24px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;font-size:12px;color:#fff;z-index:1;margin-top:1px}
+.si.ok{background:var(--ok)}.si.run{background:var(--blue);animation:pulse 1.1s infinite}.si.wait{background:#dbe3ee;color:#94a3b8}.si.bad{background:var(--bad)}
+@keyframes pulse{50%{opacity:.45}}
+.sname{font-size:13px}.step.wait .sname{color:#9aa7b4}
+.stime{font-size:11px;color:var(--sub)}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:6px 12px;font-size:12.5px}
+.kv .k{color:var(--sub);white-space:nowrap}.kv .v{font-weight:500;word-break:break-all}
+.hist-item{display:flex;justify-content:space-between;gap:6px;align-items:center;padding:7px 9px;border-radius:8px;cursor:pointer;font-size:12.5px}
+.hist-item:hover{background:var(--chip)}
+.hist-item.on{background:#e5edfb;outline:1px solid #c3d6f7}
+.hist-item .tag{font-family:Consolas,monospace;font-size:11.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pill{border-radius:9px;padding:1px 8px;font-size:11px;white-space:nowrap}
+.p-ok{background:#e5f5ec;color:var(--ok)}.p-bad{background:#fdeaea;color:var(--bad)}
+
+/* ---------- center: chat ---------- */
+.center{display:flex;flex-direction:column;min-height:calc(100vh - 96px)}
+.chat-card{flex:1;display:flex;flex-direction:column;min-height:560px}
+.chat-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.link-btn{border:0;background:none;color:var(--sub);font-size:12px;cursor:pointer}
+.link-btn:hover{color:var(--ink)}
+.chat{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:12px;max-height:calc(100vh - 320px);min-height:380px;padding:4px 2px}
+.msg{display:flex;gap:10px}
+.av{width:32px;height:32px;border-radius:9px;flex:none;display:flex;align-items:center;justify-content:center;font-size:15px;color:#fff}
+.msg.user .av{background:var(--blue)}.msg.agent .av{background:#334760}
+.bubble{border-radius:12px;padding:12px 14px;font-size:13.5px;line-height:1.8;max-width:88%;overflow-wrap:break-word}
+.msg.user .bubble{background:#e8effd}
+.msg.agent .bubble{background:#f7f9fc;border:1px solid var(--line)}
+.msg.typing .bubble{color:var(--sub)}
+.flag{display:inline-block;background:#fef3cd;color:#8a6d00;border-radius:8px;padding:1px 8px;font-size:11px;margin:2px 4px 0 0}
+.exec-card{border:1px solid var(--line);border-radius:12px;background:#fbfcfe;padding:12px 14px;margin:2px 0}
+.exec-card .t{font-weight:600;display:flex;gap:8px;align-items:center;margin-bottom:8px}
+.gear{display:inline-block;animation:spin 2.4s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.mini{display:grid;gap:6px}
+.mini .row{display:flex;gap:8px;align-items:center;font-size:12.5px}
+.mini .row .mr{margin-left:auto;color:var(--sub);font-size:11.5px}
+.chat-input{border:1px solid var(--line);border-radius:12px;padding:10px;background:#fff;margin-top:10px}
+.chat-input textarea{width:100%;border:0;outline:none;resize:vertical;min-height:50px;font:inherit;background:none}
+.irow{display:flex;align-items:center;gap:10px;margin-top:6px}
+.hint{color:var(--sub);font-size:11.5px;flex:1}
+.send{background:var(--blue);color:#fff;border:0;border-radius:10px;width:44px;height:34px;cursor:pointer;font-size:15px}
+.send:disabled{background:#b7c6dd;cursor:not-allowed}
+
+/* ---------- right: results ---------- */
+.tabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.tabs button{border:1px solid var(--line);background:#fff;border-radius:9px;padding:7px 12px;font-size:12.5px;cursor:pointer}
+.tabs button.on{background:var(--blue);color:#fff;border-color:var(--blue)}
+.chart{display:grid;gap:10px}
+.brow{display:grid;grid-template-columns:100px 1fr;gap:10px;align-items:center}
+.bars{display:grid;gap:3px}
+.bar{height:15px;background:#eef2f8;border-radius:4px;overflow:hidden;display:flex}
+.bar i{display:block;height:100%;border-radius:4px;min-width:2px}
+.bar.pre i{background:var(--blue-l)}.bar.post i{background:var(--blue)}
+.bar span{font-size:10.5px;color:#fff;padding-left:6px;line-height:15px;white-space:nowrap}
+.bar.na{background:none}
+.legend{display:flex;gap:14px;font-size:11.5px;color:var(--sub);margin-top:6px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:4px;vertical-align:-1px}
+h4.sec{font-size:13px;margin:14px 0 6px}
+h4.sec:first-child{margin-top:0}
+.concl{background:#f4f8ff;border:1px solid #dbe7fb;border-radius:10px;padding:10px 12px;font-size:12.5px;line-height:1.8;margin-top:10px}
+.concl ul{margin:4px 0 0 18px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.tbl{width:100%;border-collapse:collapse;font-size:12.5px}
+.tbl th{color:var(--sub);font-weight:600;text-align:left;border-bottom:1px solid var(--line);padding:6px 4px}
+.tbl td{border-bottom:1px solid var(--line);padding:6px 4px}
+.num{text-align:right;font-variant-numeric:tabular-nums}
+.badge{display:inline-block;border-radius:9px;padding:1px 8px;font-size:11px;white-space:nowrap}
+.b-repair{background:#e5f5ec;color:var(--ok)}.b-dedup{background:#eceefc;color:#4353c9}
+.b-isolate{background:#fdeaea;color:var(--bad)}.b-log{background:#fdf3e3;color:#a16207}.b-na{background:#eef2f8;color:var(--sub)}
+.mono{font-family:Consolas,monospace;font-size:11.5px;white-space:pre-wrap;word-break:break-all;background:#f6f8fb;border:1px solid var(--line);border-radius:8px;padding:8px;max-height:200px;overflow:auto}
+/* markdown */
+.mdh{margin:10px 0 4px;font-weight:700}
+.mdh:first-child{margin-top:0}
+h3.mdh{font-size:14.5px}h4.mdh{font-size:13.5px}h5.mdh,h6.mdh{font-size:13px}
+.mdtbl{border-collapse:collapse;margin:6px 0;font-size:12.5px;max-width:100%;display:block;overflow-x:auto}
+.mdtbl th,.mdtbl td{border:1px solid var(--line);padding:4px 9px;white-space:nowrap}
+.mdtbl th{background:#f1f5fb;font-weight:600}
+.mdtbl td:nth-child(n+2),.mdtbl th:nth-child(n+2){text-align:right}
+.mdtbl td:first-child,.mdtbl th:first-child{text-align:left}
+.mdl{margin:4px 0 4px 18px}.mdin{margin-left:14px}
+.mdl li,.mdp li{margin:3px 0;line-height:1.8}
+.mdp{margin:5px 0;line-height:1.8}
+.mdq{border-left:3px solid var(--blue);background:#f4f8ff;margin:6px 0;padding:6px 10px;color:#3b4a5f}
+.mdhr{border:0;border-top:1px solid var(--line);margin:10px 0}
+.mdcode{background:#f6f8fb;border:1px solid var(--line);border-radius:8px;padding:8px;font-family:Consolas,monospace;font-size:11.5px;overflow-x:auto}
+.bubble code{background:#eef2f8;border-radius:4px;padding:0 5px;font-size:12px}
+.bubble table{font-variant-numeric:tabular-nums}
+.timecard{background:#f6f9ff;border:1px solid #dbe7fb;border-radius:10px;padding:10px 12px}
+.empty{color:#9aa7b4;text-align:center;padding:40px 8px;font-size:13px;line-height:1.9}
+.lim li{margin:5px 0 5px 16px;font-size:12.5px;color:var(--sub);line-height:1.7}
+a.dl{color:var(--blue);font-size:12.5px}
+.note{font-size:11.5px;color:var(--sub);margin-top:8px;line-height:1.7}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">🎬</div>
+  <div><h1>MovieLens 数据治理 Agent</h1><div class="sub">基于 Hadoop 的数据清洗与五维质量评估</div></div>
+  <div class="hmeta">
+    <span class="hchip">🗄 数据集 <b>ml-1m</b> <span id="h-input-ver"></span></span>
+    <span class="hchip">⚙ 规则版本 <b id="h-rule">rules-v1.0</b>(默认规则)</span>
+    <span class="hchip">🗓 时间边界 <b id="h-t">T1 / T2 待登记</b></span>
+  </div>
+</header>
+
+<div class="layout">
+
+  <!-- ============ 左栏:任务状态 ============ -->
+  <div>
+    <div class="card">
+      <h3>📌 任务状态</h3>
+      <div class="banner"><div class="dot idle" id="banner-dot">·</div>
+        <div><div class="big" id="b-title">初始状态</div><div class="t" id="b-sub">等待发起任务</div></div>
+      </div>
+      <div class="steps" id="steps"></div>
+    </div>
+    <div class="card">
+      <h3>🧾 当前任务</h3>
+      <div class="kv">
+        <span class="k">任务 ID</span><span class="v" id="c-id">—</span>
+        <span class="k">数据版本</span><span class="v" id="c-data">—</span>
+        <span class="k">规则版本</span><span class="v" id="c-rule">—</span>
+        <span class="k">T1(训练期截止)</span><span class="v" id="c-t1">—</span>
+        <span class="k">T2(验证期截止)</span><span class="v" id="c-t2">—</span>
+        <span class="k">开始时间</span><span class="v" id="c-start">—</span>
+        <span class="k">运行时长</span><span class="v" id="c-dur">—</span>
+      </div>
+    </div>
+    <div class="card">
+      <h3>🗂 历史任务</h3><div id="history"><div class="empty" style="padding:14px">暂无历史任务</div></div>
+    </div>
+  </div>
+
+  <!-- ============ 中栏:Agent 对话 ============ -->
+  <div class="center">
+    <div class="card chat-card" style="display:flex;flex-direction:column">
+      <div class="chat-head"><h3 style="margin:0">💬 Agent 对话</h3>
+        <button class="link-btn" id="btn-clear">🗑 清空对话</button></div>
+      <div class="chat" id="chat">
+        <div class="empty">在下方输入清洗需求,例如:<br>「请使用默认规则清洗 MovieLens 1M,评估清洗前后的五个质量维度,并说明处理了哪些问题、还有哪些问题无法解决」</div>
+      </div>
+      <div class="chat-input">
+        <textarea id="msg" placeholder="输入指令或追问…(Enter 发送,Shift+Enter 换行)"></textarea>
+        <div class="irow">
+          <span class="hint">可问:为什么 Unique 提升了?哪些数据被隔离了?为什么 Up-to-date 没有提升?</span>
+          <button class="send" id="btn-send">➤</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 右栏:结果展示 ============ -->
+  <div>
+    <div class="card">
+      <h3>📊 结果展示</h3>
+      <div class="tabs" id="tabs">
+        <button data-t="ov" class="on">总览</button><button data-t="dims">五维评分</button>
+        <button data-t="rows">数据变化</button><button data-t="disp">问题处理</button>
+        <button data-t="sample">数据样例</button><button data-t="rep">评估报告</button>
+      </div>
+      <div id="pane"><div class="empty">暂无评估结果<br><small>发起或选择一个任务后,这里展示五维评分、数据变化与问题处理</small></div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const esc=t=>(t||"").replaceAll("&","&amp;").replaceAll("<","&lt;");
+const DIMS=[["accurate","Accurate(准确性)"],["complete","Complete(完整性)"],["unique","Unique(唯一性)"],
+            ["up_to_date","Up-to-date(时效性)"],["consistent","Consistent(一致性)"]];
+const TABLES=[["ratings","ratings.dat"],["users","users.dat"],["movies","movies.dat"]];
+const STEPS=[
+  {n:"解析用户需求",       stage:"agent-thinking"},
+  {n:"准备数据与配置",     stage:"fingerprint"},
+  {n:"清洗前质量评估",     stage:"score-raw"},
+  {n:"执行数据清洗(Hadoop)",stage:"clean-users"},
+  {n:"清洗后质量评估",     stage:"score-clean"},
+  {n:"生成结果与报告",     stage:"report"},
+];
+/* mr_stage -> 六步 index */
+const STEP_OF={"agent-thinking":0,"pipeline-starting":1,"fingerprint":1,"extract-ids-raw":1,
+  "score-raw":2,"clean-users":3,"clean-movies":3,"dedup-movie-titles":3,"refs-clean":3,
+  "clean-ratings":3,"pipeline-executing":3,"score-clean":4,"report":5,"pipeline-done":5,
+  "agent-summarizing":5,"done":5,"failed":5,"agent-summarizing-failure":5};
+const STAGE_CN={"agent-thinking":"解析需求","pipeline-starting":"初始化","fingerprint":"输入指纹",
+  "extract-ids-raw":"提取参照 ID","score-raw":"清洗前评分","clean-users":"清洗用户表",
+  "clean-movies":"清洗电影表","dedup-movie-titles":"电影标题去重(M5b)","refs-clean":"汇总清洗后参照",
+  "clean-ratings":"清洗评分表","pipeline-executing":"Hadoop 作业执行中","score-clean":"清洗后评分",
+  "report":"汇总报告","pipeline-done":"管线完成","agent-summarizing":"生成总结","done":"全部完成"};
+
+const S={taskId:null,state:"idle",stage:null,mr:null,error:null,narrative:null,
+         report:null,start:null,end:null,doneIdx:-1,timer:null,tab:"ov",finalShown:false};
+
+/* ============ 左栏渲染 ============ */
+function renderBanner(){
+  const d=$("banner-dot"),t=$("b-title"),sub=$("b-sub");
+  if(!S.taskId){d.className="dot idle";d.textContent="·";t.textContent="初始状态";sub.textContent="等待发起任务";return;}
+  if(S.state==="running"){d.className="dot run";d.textContent="●";t.textContent="任务执行中";
+    sub.textContent=curStepName();}
+  else if(S.state==="success"){d.className="dot ok";d.textContent="✓";t.textContent="任务已完成";
+    sub.textContent=S.end?new Date(S.end).toLocaleTimeString("zh-CN",{hour12:false})+" 完成":"";}
+  else{d.className="dot bad";d.textContent="✕";t.textContent="任务失败";sub.textContent=S.error?"失败环节:"+stageCn(S.error):"";}
+}
+function curStepIdx(){return S.taskId?Math.max(0,STEP_OF[S.mr||S.stage]??0):0;}
+function curStepName(){const st=S.mr||S.stage;
+  if(STAGE_CN[st])return STAGE_CN[st];
+  return {starting:"受理请求","agent-thinking":"解析需求"}[st]||"";}
+function renderSteps(){
+  const box=$("steps");box.innerHTML="";
+  const cur=S.state==="success"?6:(S.state==="failed"?(S.doneIdx>=0?S.doneIdx+1:0):curStepIdx());
+  STEPS.forEach((st,i)=>{
+    let cls="wait",icon="○";
+    if(i<cur){cls="ok";icon="✓";}
+    else if(i===cur){cls=S.state==="failed"?"bad":"run";icon=S.state==="failed"?"✕":"●";}
+    if(S.state==="success"||S.doneIdx>=i&&S.state!=="running"||i<S.doneIdx){if(i<=S.doneIdx){cls="ok";icon="✓";}}
+    const t=S.stepTimes?.[i]?new Date(S.stepTimes[i]).toLocaleTimeString("zh-CN",{hour12:false}):"";
+    const el=document.createElement("div");el.className="step";
+    el.innerHTML=`<div class="si ${cls}">${icon}</div><div><div class="sname">${st.n}</div><div class="stime">${t}</div></div>`;
+    box.appendChild(el);
+  });
+}
+function markStep(idx){
+  if(idx>S.doneIdx){S.doneIdx=idx;S.stepTimes=S.stepTimes||{};S.stepTimes[idx]=Date.now();renderSteps();}
+}
+function renderCur(){
+  $("c-id").textContent=S.taskId||"—";
+  $("c-data").textContent=S.report?S.report.input_data_version:(S.state==="running"?"指纹计算中…":"—");
+  $("c-rule").textContent=S.report?S.report.rule_version:"rules-v1.0";
+  $("c-t1").textContent=S.report?(S.report.split?.t1||"—").slice(0,10):"—";
+  $("c-t2").textContent=S.report?(S.report.split?.t2||"—").slice(0,10):"—";
+  $("c-start").textContent=S.start?new Date(S.start).toLocaleString("zh-CN",{hour12:false}):"—";
+  $("c-dur").textContent=S.start?fmtDur((S.end||Date.now())-S.start):"—";
+}
+function fmtDur(ms){const s=Math.max(0,Math.floor(ms/1000));return s<60?s+" 秒":Math.floor(s/60)+" 分 "+(s%60)+" 秒";}
+
+/* ============ 中栏对话 ============ */
+function pushMsg(role,html){
+  const chat=$("chat");
+  const empty=chat.querySelector(".empty");if(empty)empty.remove();
+  const el=document.createElement("div");el.className="msg "+role;
+  el.innerHTML=`<div class="av">${role==="user"?"👤":"🤖"}</div><div class="bubble">${html}</div>`;
+  chat.appendChild(el);chat.scrollTop=chat.scrollHeight;return el;
+}
+function renderExec(){
+  const card=$("exec-card");if(!card)return;
+  const box=card.querySelector(".mini-steps");
+  const cur=S.state==="success"||S.state==="failed"?99:Math.max(0,STEP_OF[S.mr||S.stage]??0);
+  box.innerHTML=STEPS.map((st,i)=>{
+    const c=i<cur?"ok":i===cur?(S.state==="failed"?"bad":"run"):"wait";
+    const icon=c==="ok"?"✓ 已完成":c==="run"?"● 正在执行"+(STAGE_CN[S.mr]?": "+STAGE_CN[S.mr]:"…"):c==="bad"?"✕ 失败":"○ 等待中";
+    return `<div class="row"><span class="si ${c}" style="width:18px;height:18px;font-size:10px">${c==="ok"?"✓":c==="run"?"●":c==="bad"?"✕":"○"}</span>
+      <span style="${c==='wait'?'color:#9aa7b4':''}">${st.n}</span><span class="mr">${icon}</span></div>`;
+  }).join("");
+}
+
+/* ============ 右栏结果 ============ */
+document.querySelectorAll("#tabs button").forEach(b=>b.onclick=()=>{
+  document.querySelectorAll("#tabs button").forEach(x=>x.classList.remove("on"));
+  b.classList.add("on");S.tab=b.dataset.t;renderPane();
+});
+function renderPane(){
+  const p=$("pane"),rep=S.report;
+  if(!rep){p.innerHTML='<div class="empty">'+(S.state==="running"?"等待任务完成…":"暂无评估结果<br><small>发起或选择一个任务后,这里展示结果</small>")+'</div>';return;}
+  p.innerHTML={ov:overview,dims:dimsTab,rows:rowsTab,disp:dispTab,sample:sampleTab,rep:repTab}[S.tab](rep);
+}
+function chart(rep,table){
+  const sc=rep.scores[table];let h='<div class="chart">';
+  for(const [k,label] of DIMS){
+    const r=sc.raw[k],c=sc.clean[k];
+    if(r==null&&c==null){h+=`<div class="brow"><span style="font-size:12px;color:var(--sub)">${label}</span>
+      <span><span class="badge b-na">不适用(静态快照无时间字段)</span></span></div>`;continue;}
+    h+=`<div class="brow"><span style="font-size:12px">${label}</span><div class="bars">
+      <div class="bar pre"><i style="width:${r}%"><span>${r}</span></i></div>
+      <div class="bar post"><i style="width:${c}%"><span>${c}</span></i></div></div></div>`;
+  }
+  return h+`</div><div class="legend"><span><i style="background:var(--blue-l)"></i>清洗前</span>
+    <span><i style="background:var(--blue)"></i>清洗后</span></div>`;
+}
+function overview(rep){
+  return `<h4 class="sec">📊 五维质量评分对比(ratings)</h4>${chart(rep,"ratings")}
+  <div class="concl"><b>💡 评分结论</b><ul>
+    <li>综合分 <b>${rep.dataset_composite.raw} → ${rep.dataset_composite.clean}</b>。</li>
+    ${conclItems(rep)}</ul></div>
+  <h4 class="sec">📉 数据量变化</h4>${rowsTab(rep)}
+  <div class="grid2" style="margin-top:12px">
+    <div><h4 class="sec" style="margin-top:0">🧩 问题处理(ratings 为例)</h4>${miniDisp(rep)}</div>
+    <div><h4 class="sec" style="margin-top:0">🗓 时间范围</h4>${timeCard(rep)}</div>
+  </div>`;
+}
+function conclItems(rep){
+  const items=[];
+  const d=rep.scores.ratings.delta;
+  const sorted=Object.entries(d).filter(([,v])=>v!=null).sort((a,b)=>b[1]-a[1]);
+  if(sorted.length)items.push(`ratings 提升最大维度:<b>${dimCn(sorted[0][0])} (+${sorted[0][1]})</b>;最小:<b>${dimCn(sorted[sorted.length-1][0])} (${sorted[sorted.length-1][1]>=0?"+":""}${sorted[sorted.length-1][1]})</b>。`);
+  items.push("users/movies 的 Up-to-date 为「不适用」:MovieLens 1M 是静态历史快照,清洗不改变数据年代——评价体系不强行抬分。");
+  const rep_=rep.disposition.ratings.counts;
+  const repair=Object.entries(rep_.counts||rep_).filter==null?0:0;
+  items.push("分数上升部分来自真实修复,部分来自隔离/去重使分母变小;处置区分详见「问题处理」标签。");
+  return items.map(i=>`<li>${i}</li>`).join("");
+}
+function dimCn(k){return({"accurate":"Accurate 准确性","complete":"Complete 完整性","unique":"Unique 唯一性",
+  "up_to_date":"Up-to-date 时效性","consistent":"Consistent 一致性"})[k]||k;}
+function dimsTab(rep){
+  return TABLES.map(([t,name])=>`<h4 class="sec">${name}</h4>${chart(rep,t)}`).join("")+
+    `<div class="concl"><b>💡 评分结论</b><ul>${conclItems(rep)}</ul>
+     <details style="margin-top:6px"><summary style="cursor:pointer;font-size:12px;color:var(--sub)">全部评价局限</summary>
+     <ul class="lim" style="margin:6px 0 0 16px">${(rep.limitations||[]).map(l=>`<li>${l}</li>`).join("")}</ul></details></div>`;
+}
+function rowsTab(rep){
+  let h=`<table class="tbl"><tr><th>数据文件</th><th class="num">原始记录</th><th class="num">清洗后</th><th class="num">处置量</th></tr>`;
+  for(const [t,name] of TABLES){const v=rep.row_change[t];
+    h+=`<tr><td>${name}</td><td class="num">${v.raw.toLocaleString()}</td>
+      <td class="num">${v.clean.toLocaleString()}</td><td class="num">${v.removed.toLocaleString()}</td></tr>`;}
+  h+=`</table><p class="note">清洗不是免费提分:行数变化必须与处置方式一起解读。隔离/去重使有效行减少,Accurate/Unique 等指标的上升部分来自分母变化。</p>`;
+  return h;
+}
+function dispTab(rep){
+  const ACT=[["repair","修复(改写保留)","b-repair"],["dedup","去重","b-dedup"],
+             ["isolate","隔离","b-isolate"],["log","登记保留","b-log"],["base","正常保留(基线)","b-na"]];
+  let h='<div class="grid2">';
+  for(const [t,name] of TABLES){
+    const counts=rep.disposition[t]?.counts||{};
+    // 归类:clean:<rule> 拆成 修复(规则性修复)与基线保留
+    let rows="";
+    const groups={};
+    for(const [k,v] of Object.entries(counts)){
+      const [act,rule]=k.split(":");
+      groups[act]=groups[act]||{};groups[act][rule]=v;
+    }
+    for(const [act,label,cls] of ACT){
+      if(act==="base"){
+        const base=Object.entries(groups.clean||{}).filter(([r])=>isBaseline(t,r));
+        const tot=base.reduce((s,[,v])=>s+v,0);
+        if(!tot)continue;
+        h+=card(name,cls,"正常保留(未改动)",tot,base.map(([r,v])=>`${r}×${v.toLocaleString()}`).join("、"));
+      }else{
+        const src=act==="repair"
+          ?Object.entries(groups.clean||{}).filter(([r])=>!isBaseline(t,r))
+          :Object.entries(groups[act]||{});
+        const tot=src.reduce((s,[,v])=>s+v,0);
+        if(!tot)continue;
+        h+=card(name,cls,{repair:"修复(改写后保留)",dedup:"去重(保留一条)",isolate:"隔离(移出有效集)",log:"登记保留(未修复)"}[act],tot,src.map(([r,v])=>`${r}×${v.toLocaleString()}`).join("、"));
+      }
+    }
+  }
+  h+=`</div><p class="note">⚠ <b>删除 ≠ 修复,隔离 ≠ 修复</b>:隔离与去重只是把记录移出有效数据集;「登记保留」字段仍在数据中。前端不提供"共处理 N 条问题"的合并口径,防止把删除表述成修复。</p>`;
+  return h;
+}
+function isBaseline(table,rule){
+  if(table==="ratings")return rule==="R1";            // R1 为通过基线(修复仅 R5/R8)
+  if(table==="movies")return rule.startsWith("M7")||rule==="M5b";
+  return false;                                        // users 无基线规则
+}
+function card(title,cls,label,tot,det){
+  return `<div style="margin-bottom:8px"><div style="display:flex;justify-content:space-between">
+    <span class="badge ${cls}">${title}·${label}</span><span class="num">${tot.toLocaleString()}</span></div>
+    <div style="font-size:11px;color:var(--sub);margin-top:2px">${det}</div></div>`;
+}
+function miniDisp(rep){
+  const c=rep.disposition.ratings.counts;
+  const agg=a=>Object.entries(c).filter(([k])=>k.startsWith(a+":")).reduce((s,[,v])=>s+v,0);
+  const repair=Object.entries(c).filter(([k])=>k.startsWith("clean:")&&!k.includes(":R1")).reduce((s,[,v])=>s+v,0);
+  return `<div style="display:grid;gap:6px;font-size:12.5px">
+    <div><span class="badge b-repair">修复</span> ${repair.toLocaleString()} 条(R5 毫秒归一 + R8 偏移还原)</div>
+    <div><span class="badge b-dedup">去重</span> ${agg("dedup").toLocaleString()} 条(R7 保留最新评分)</div>
+    <div><span class="badge b-isolate">隔离</span> ${agg("isolate").toLocaleString()} 条(值域/引用/年代不可还原)</div>
+    <div><span class="badge b-log">登记</span> ${agg("log").toLocaleString()} 条</div></div>
+    <p class="note">「共 3,377 条」式的合并口径被有意避免——删除/隔离不计为修复。</p>`;
+}
+function timeCard(rep){
+  const s=rep.split||{};
+  return `<div class="timecard kv">
+    <span class="k">T1(训练期截止)</span><span class="v">${(s.t1||"—").slice(0,10)}</span>
+    <span class="k">T2(验证期截止)</span><span class="v">${(s.t2||"—").slice(0,10)}</span>
+    <span class="k">测试数据</span><span class="v">位于 T2 之后</span></div>
+    <p class="note">后续推荐/分析任务应引用同一 <b>dataset_version + rule_version + T1 + T2</b>,冻结实验边界。</p>`;
+}
+function sampleTab(rep){
+  return TABLES.map(([t,name])=>{
+    const s=rep.disposition[t]?.samples||{};
+    return `<h4 class="sec">${name}</h4>
+    <div class="mono">[clean] ${(s.clean||["(无)"]).join("\n")}\n\n[isolate] ${(s.isolate||["(无)"]).join("\n")}\n\n[log] ${(s.log||["(无)"]).join("\n")}</div>`;
+  }).join("");
+}
+function repTab(rep){
+  const s=rep.split||{};
+  const tag=S.tag||S.taskId;
+  return `<div class="kv">
+    <span class="k">规则版本</span><span class="v">${rep.rule_version}</span>
+    <span class="k">输入数据版本</span><span class="v">${rep.input_data_version}</span>
+    <span class="k">输出数据版本</span><span class="v">${rep.output_data_version}</span>
+    <span class="k">T1</span><span class="v">${s.t1||"—"}</span>
+    <span class="k">T2</span><span class="v">${s.t2||"—"}</span>
+    <span class="k">切分(train/valid/test)</span><span class="v">${(s.train||0).toLocaleString()} / ${(s.valid||0).toLocaleString()} / ${(s.test||0).toLocaleString()}</span>
+  </div>
+  <h4 class="sec">评价局限(报告原样声明)</h4>
+  <ul class="lim">${(rep.limitations||[]).map(l=>`<li>${l}</li>`).join("")}</ul>
+  <p style="margin-top:10px"><a class="dl" href="/api/tasks/${tag}/report/download">⬇ 下载完整评估报告 report.json</a></p>
+  <p class="note">后续实验引用同一 <b>dataset_version + rule_version + T1 + T2</b>。</p>`;
+}
+
+/* ============ 历史任务 ============ */
+async function loadHistory(){
+  try{
+    const reg=await(await fetch("/api/registry")).json();
+    const ok=[...reg].reverse();
+    $("history").innerHTML=ok.length?ok.slice(0,6).map(e=>{
+      const okS=e.status==="success";
+      return `<div class="hist-item" data-tag="${e.tag}" data-ok="${okS}">
+        <span style="min-width:0"><span class="tag">${e.tag||e.task_id}</span>
+        <span class="pill ${okS?"p-ok":"p-bad"}" style="margin-left:6px">${okS?"已完成":"失败"}</span></span>
+        <span style="color:var(--sub);font-size:11px;white-space:nowrap">${(e.created_at||"").slice(5,16)}</span></div>`;
+    }).join(""):'<div class="empty" style="padding:14px">暂无历史任务</div>';
+    $("history").querySelectorAll(".hist-item").forEach(el=>{
+      el.onclick=()=>{if(el.dataset.ok==="true")loadReportByTag(el.dataset.tag);
+        else pushMsg("agent","该历史任务状态为失败,没有可展示的报告。");};
+    });
+    const last=reg.filter(e=>e.status==="success").pop();
+    if(last&&!S.taskId){
+      $("h-input-ver").textContent="("+last.input_data_version+")";
+      $("h-t").textContent=`T1=${(last.t1||"").slice(0,10)} T2=${(last.t2||"").slice(0,10)}`;
+    }
+  }catch(e){}
+}
+
+async function loadReportByTag(tag){
+  const r=await fetch(`/api/tasks/${tag}/report`);
+  if(!r.ok){pushMsg("agent",`任务 ${tag} 的报告不存在(可能已被清理)。`);return;}
+  // 清空当前对话并回放历史会话(agent_memory.db 持久化,重启后仍可用)
+  $("chat").innerHTML="";
+  try{
+    const t=await(await fetch(`/api/tasks/${tag}/transcript`)).json();
+    for(const m of t){
+      if(m.role==="user")pushMsg("user",esc(m.text));
+      else if(m.role==="agent")pushMsg("agent",fmtNarr(m.text));
+      else if(m.role==="tool")pushMsg("agent",`<span class="flag">🔧 调用工具 ${esc(m.text)}</span>`);
+    }
+  }catch(e){/* 回放失败不阻塞报告加载 */}
+  if(!$("chat").querySelector(".msg"))pushMsg("agent","(该任务无已保存的对话记录)");
+  S.report=await r.json();S.tag=tag;S.taskId=tag;S.state="success";S.doneIdx=5;S.end=Date.now();
+  applyReportMeta(S.report);renderAll();renderPane(S.tab);
+  pushMsg("agent",`已切换到历史任务 <b>${esc(tag)}</b>:报告与对话已恢复,可直接在下方继续追问。`);
+}
+function applyReportMeta(rep){
+  $("h-input-ver").textContent="("+rep.input_data_version+")";
+  $("h-rule").textContent=rep.rule_version;
+  $("h-t").textContent=`T1=${(rep.split?.t1||"").slice(0,10)} T2=${(rep.split?.t2||"").slice(0,10)}`;
+  S.t1=rep.split?.t1;S.t2=rep.split?.t2;S.data=rep.input_data_version;
+}
+function renderAll(){renderBanner();renderCur();renderSteps();renderPane(S.tab);}
+
+/* ============ 发送 / 轮询 ============ */
+function send(msg){
+  pushMsg("user",msg);
+  const thinking=pushMsg("agent","<span class='gear'>⚙</span> 正在理解需求并选择工具…");
+  fetch("/api/tasks",{method:"POST",headers:{'Content-Type':'application/json'},body:JSON.stringify({message:msg})})
+  .then(async r=>{
+    const j=await r.json();
+    if(!r.ok){thinking.querySelector(".bubble").innerHTML=`<span class="flag">未受理</span>${esc(j.reason||j.detail||"服务暂不可用")}`;return;}
+    thinking.remove();
+    S.taskId=j.task_id;S.state="running";S.stage="agent-thinking";S.mr=null;S.doneIdx=-1;
+    S.stepTimes={};S.start=Date.now();S.end=null;S.report=null;S.narrative=null;S.finalShown=false;
+    renderAll();renderPane(S.tab);
+    S.execCard=pushMsg("agent",`<div class="exec-card"><div class="t"><span class="gear">⚙</span>任务执行中…</div><div class="mini" id="mini"></div></div>`);
+    S.timer=setInterval(poll,3000);poll();
+  }).catch(e=>{thinking.querySelector(".bubble").textContent="网络错误:"+e.message;});
+}
+async function poll(){
+  if(!S.taskId)return;
+  let j;try{j=await(await fetch("/api/tasks/"+S.taskId)).json();}catch(e){return;}
+  S.state=j.status;S.stage=j.stage;S.mr=j.mr_stage;S.error=j.error;
+  if(j.narrative&&j.status!=="running"){S.narrative=j.narrative;}
+  const idx=STEP_OF[j.mr_stage||j.stage];
+  if(idx!=null)markStep(idx);
+  renderBanner();renderCur();renderSteps();
+  if(S.execCard)renderMiniExec();
+  if(j.status!=="running"){clearInterval(S.timer);S.timer=null;finish(j);}
+}
+function renderMiniExec(){
+  const box=S.execCard?.querySelector("#mini");if(!box)return;
+  const cur=S.state==="running"?Math.max(0,STEP_OF[S.mr||S.stage]??0):99;
+  box.innerHTML=STEPS.map((st,i)=>{
+    const c=i<cur?"ok":i===cur?"run":"wait";
+    const label=c==="ok"?"✓ 已完成":c==="run"?"● 正在执行"+(STAGE_CN[S.mr]?": "+STAGE_CN[S.mr]:"…"):"○ 等待中";
+    return `<div class="row"><span class="si ${c}" style="width:18px;height:18px;font-size:10px">${c==="ok"?"✓":c==="run"?"●":"○"}</span>
+      <span class="${c==='wait'?'':''}" style="${c==='wait'?'color:#9aa7b4':''}">${st.n}</span><span class="mr">${label}</span></div>`;
+  }).join("");
+}
+function finish(j){
+  S.state=j.status;S.end=Date.now();
+  clearInterval(S.timer);S.timer=null;
+  renderBanner();renderCur();renderSteps();renderMiniExec();
+  if(j.status==="failed"){
+    pushMsg("agent",`❌ 任务失败。<br><b>失败环节</b>:${stageCn(j.stage)}<br><b>原因</b>:${esc(j.error||"")}`);
+    renderPane(S.tab);loadHistory();return;
+  }
+  pushMsg("agent",fmtNarr(j.narrative||"任务已完成。"));
+  fetch("/api/tasks/"+S.taskId+"/report").then(r=>r.ok?r.json():Promise.reject())
+  .then(rep=>{S.report=rep;S.tag=S.taskId;applyReportMeta(rep);renderAll();renderPane(S.tab);loadHistory();})
+  .catch(()=>{pushMsg("agent","任务完成但报告读取失败。");});
+  S.doneIdx=5;markStep(5);
+}
+function stageCn(st){
+  return STAGE_CN[st]||({starting:"受理","agent-thinking":"解析用户需求"}[st]||st||"");
+}
+
+/* ============ 追问 ============ */
+async function ask(q){
+  pushMsg("user",q);
+  const w=pushMsg("agent","<span class='gear'>⚙</span> 正在读取报告工具…");
+  const r=await fetch(`/api/tasks/${S.taskId}/ask`,{method:"POST",
+    headers:{'Content-Type':'application/json'},body:JSON.stringify({message:q})});
+  if(!r.ok){const j=await r.json().catch(()=>({}));w.querySelector(".bubble").innerHTML=`<span class="flag">异常</span>${esc(j.detail||("HTTP "+r.status))}`;return;}
+  const j=await r.json();
+  let html=fmtNarr(j.answer||"(空)");
+  if(j.flagged&&j.flagged.length)
+    html+='<div style="margin-top:4px">'+j.flagged.map(f=>`<span class="flag">「${esc(f)}」未出自本次报告</span>`).join("")+"</div>";
+  w.querySelector(".bubble").innerHTML=html;
+  $("chat").scrollTop=$("chat").scrollHeight;
+}
+function fmtNarr(t){return mdRender(t);}
+
+/* ---------- 零依赖 Markdown 渲染(标题/表格/列表/加粗/行内代码/分隔线/链接) ---------- */
+function mdRender(src){
+  const lines=(src||"").replace(/\r/g,"").split("\n");
+  let html="",i=0;
+  const inline=s=>{
+    s=esc(s);
+    s=s.replace(/`([^`]+)`/g,"<code>$1</code>");
+    s=s.replace(/\*\*([^*]+)\*\*/g,"<b>$1</b>");
+    s=s.replace(/\*([^*\n]+)\*/g,"<i>$1</i>");
+    s=s.replace(/\[([^\]]+)\]\(([^)\s]+)\)/g,'<a href="$2" target="_blank" rel="noopener">$1</a>');
+    return s;
+  };
+  while(i<lines.length){
+    const line=lines[i];
+    if(!line.trim()){i++;continue;}
+    if(/^```/.test(line)){                       // 代码块
+      let buf=[];i++;
+      while(i<lines.length&&!/^```/.test(lines[i])){buf.push(lines[i]);i++;}
+      i++;html+=`<pre class="mdcode">${esc(buf.join("\n"))}</pre>`;continue;
+    }
+    if(/^\|.*\|\s*$/.test(line)&&i+1<lines.length&&/^\|[\s:|-]+\|\s*$/.test(lines[i+1])){  // 表格
+      const head=line.split("|").slice(1,-1).map(s=>s.trim());
+      i+=2;let rows=[];
+      while(i<lines.length&&/^\|.*\|\s*$/.test(lines[i])){
+        rows.push(lines[i].split("|").slice(1,-1).map(s=>s.trim()));i++;}
+      html+='<table class="mdtbl"><tr>'+head.map(h=>`<th>${inline(h)}</th>`).join("")+"</tr>"+
+        rows.map(r=>"<tr>"+r.map(c=>`<td>${inline(c)}</td>`).join("")+"</tr>").join("")+"</table>";
+      continue;
+    }
+    const h=line.match(/^(#{1,6})\s+(.*)$/);
+    if(h){const lv=Math.min(h[1].length+2,6);html+=`<h${lv} class="mdh">${inline(h[2])}</h${lv}>`;i++;continue;}
+    if(/^\s*(---+|\*\*\*+)\s*$/.test(line)){html+='<hr class="mdhr">';i++;continue;}
+    const m1=line.match(/^(\s*)[-*]\s+(.*)$/);
+    if(m1){                                      // 无序列表
+      const indent=Math.floor(m1[1].length/2)+1;
+      let items=[];
+      while(i<lines.length&&/^(\s*)[-*]\s+/.test(lines[i])){
+        items.push(lines[i].replace(/^(\s*)[-*]\s+/,""));i++;
+        // 连续非列表非空行并入上一项
+        while(i<lines.length&&lines[i].trim()&&!/^\s*[-*]\s+/.test(lines[i])&&!/^\s*\d+\.\s+/.test(lines[i])){
+          items[items.length-1]+=" "+lines[i].trim();i++;}
+      }
+      html+=`<ul class="mdl${indent>1?" mdin":""}">`+items.map(x=>`<li>${inline(x)}</li>`).join("")+"</ul>";
+      continue;
+    }
+    const m2=line.match(/^(\s*)\d+\.\s+(.*)$/);
+    if(m2){                                      // 有序列表
+      let items=[];
+      while(i<lines.length&&/^(\s*)\d+\.\s+/.test(lines[i])){
+        items.push(lines[i].replace(/^(\s*)\d+\.\s+/,""));i++;}
+      html+="<ol>"+items.map(x=>`<li>${inline(x)}</li>`).join("")+"</ol>";
+      continue;
+    }
+    if(/^>\s?/.test(line)){                      // 引用
+      let buf=[];
+      while(i<lines.length&&/^>\s?/.test(lines[i])){buf.push(lines[i].replace(/^>\s?/,""));i++;}
+      html+=`<blockquote class="mdq">${inline(buf.join(" "))}</blockquote>`;continue;
+    }
+    let para=[line];i++;
+    while(i<lines.length&&lines[i].trim()&&!/^(#{1,6}\s|\s*[-*]\s|\s*\d+\.\s|\||>|```|\s*---+\s*$)/.test(lines[i])){
+      para_push(para,lines[i]);i++;}
+    html+=`<p class="mdp">${inline(para.join(" "))}</p>`;
+    continue;
+  }
+  return html;
+}
+function para_push(arr,line){arr.push(line);}
+
+/* ============ 输入路由 ============ */
+function submit(){
+  const msg=$("msg").value.trim();if(!msg)return;$("msg").value="";
+  if(S.state==="running"){pushMsg("agent","当前任务仍在执行(左栏可见进度),完成后即可继续追问。");return;}
+  const isAsk=S.state==="success"&&S.report&&!/清洗|清理|重跑|重新/.test(msg)
+              &&/什么|为什么|哪些|多少|怎么|如何|解释|说明|原因|来源/.test(msg);
+  if(isAsk)ask(msg);else send(msg);
+}
+$("btn-send").onclick=submit;
+$("msg").addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();submit();}});
+$("btn-clear").onclick=()=>{$("chat").innerHTML='<div class="empty">对话已清空,可发起新任务。</div>';};
+
+/* init */
+renderSteps();renderCur();renderPane("ov");loadHistory();
+</script>
+</body>
+</html>
