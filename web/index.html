@@ -139,7 +139,7 @@ a.dl{color:var(--blue);font-size:12.5px}
   <div><h1>MovieLens 数据治理 Agent</h1><div class="sub">基于 Hadoop 的数据清洗与五维质量评估</div></div>
   <div class="hmeta">
     <span class="hchip">🗄 数据集 <b>ml-1m</b> <span id="h-input-ver"></span></span>
-    <span class="hchip">⚙ 规则版本 <b id="h-rule">rules-v1.0</b>(默认规则)</span>
+    <span class="hchip">⚙ 规则版本 <b id="h-rule">rules-v2.0</b>(默认规则)</span>
     <span class="hchip">🗓 时间边界 <b id="h-t">T1 / T2 待登记</b></span>
   </div>
 </header>
@@ -218,18 +218,17 @@ const STEPS=[
   {n:"清洗后质量评估",     stage:"score-clean"},
   {n:"生成结果与报告",     stage:"report"},
 ];
-/* mr_stage -> 六步 index */
+/* stage -> 六步 index */
 const STEP_OF={"agent-thinking":0,"pipeline-starting":1,"fingerprint":1,"extract-ids-raw":1,
   "score-raw":2,"clean-users":3,"clean-movies":3,"dedup-movie-titles":3,"refs-clean":3,
-  "clean-ratings":3,"pipeline-executing":3,"score-clean":4,"report":5,"pipeline-done":5,
-  "agent-summarizing":5,"done":5,"failed":5,"agent-summarizing-failure":5};
+  "clean-ratings":3,"score-clean":4,"report":5,"done":5,"failed":5};
 const STAGE_CN={"agent-thinking":"解析需求","pipeline-starting":"初始化","fingerprint":"输入指纹",
   "extract-ids-raw":"提取参照 ID","score-raw":"清洗前评分","clean-users":"清洗用户表",
   "clean-movies":"清洗电影表","dedup-movie-titles":"电影标题去重(M5b)","refs-clean":"汇总清洗后参照",
-  "clean-ratings":"清洗评分表","pipeline-executing":"Hadoop 作业执行中","score-clean":"清洗后评分",
-  "report":"汇总报告","pipeline-done":"管线完成","agent-summarizing":"生成总结","done":"全部完成"};
+  "clean-ratings":"清洗评分表","score-clean":"清洗后评分",
+  "report":"汇总报告","done":"全部完成"};
 
-const S={taskId:null,state:"idle",stage:null,mr:null,error:null,narrative:null,
+const S={taskId:null,state:"idle",stage:null,error:null,narrative:null,
          report:null,start:null,end:null,doneIdx:-1,timer:null,tab:"ov",finalShown:false};
 
 /* ============ 左栏渲染 ============ */
@@ -242,8 +241,8 @@ function renderBanner(){
     sub.textContent=S.end?new Date(S.end).toLocaleTimeString("zh-CN",{hour12:false})+" 完成":"";}
   else{d.className="dot bad";d.textContent="✕";t.textContent="任务失败";sub.textContent=S.error?"失败环节:"+stageCn(S.error):"";}
 }
-function curStepIdx(){return S.taskId?Math.max(0,STEP_OF[S.mr||S.stage]??0):0;}
-function curStepName(){const st=S.mr||S.stage;
+function curStepIdx(){return S.taskId?Math.max(0,STEP_OF[S.stage]??0):0;}
+function curStepName(){const st=S.stage;
   if(STAGE_CN[st])return STAGE_CN[st];
   return {starting:"受理请求","agent-thinking":"解析需求"}[st]||"";}
 function renderSteps(){
@@ -266,7 +265,7 @@ function markStep(idx){
 function renderCur(){
   $("c-id").textContent=S.taskId||"—";
   $("c-data").textContent=S.report?S.report.input_data_version:(S.state==="running"?"指纹计算中…":"—");
-  $("c-rule").textContent=S.report?S.report.rule_version:"rules-v1.0";
+  $("c-rule").textContent=S.report?S.report.rule_version:"rules-v2.0";
   $("c-t1").textContent=S.report?(S.report.split?.t1||"—").slice(0,10):"—";
   $("c-t2").textContent=S.report?(S.report.split?.t2||"—").slice(0,10):"—";
   $("c-start").textContent=S.start?new Date(S.start).toLocaleString("zh-CN",{hour12:false}):"—";
@@ -285,10 +284,10 @@ function pushMsg(role,html){
 function renderExec(){
   const card=$("exec-card");if(!card)return;
   const box=card.querySelector(".mini-steps");
-  const cur=S.state==="success"||S.state==="failed"?99:Math.max(0,STEP_OF[S.mr||S.stage]??0);
+  const cur=S.state==="success"||S.state==="failed"?99:Math.max(0,STEP_OF[S.stage]??0);
   box.innerHTML=STEPS.map((st,i)=>{
     const c=i<cur?"ok":i===cur?(S.state==="failed"?"bad":"run"):"wait";
-    const icon=c==="ok"?"✓ 已完成":c==="run"?"● 正在执行"+(STAGE_CN[S.mr]?": "+STAGE_CN[S.mr]:"…"):c==="bad"?"✕ 失败":"○ 等待中";
+    const icon=c==="ok"?"✓ 已完成":c==="run"?"● 正在执行"+(STAGE_CN[S.stage]?": "+STAGE_CN[S.stage]:"…"):c==="bad"?"✕ 失败":"○ 等待中";
     return `<div class="row"><span class="si ${c}" style="width:18px;height:18px;font-size:10px">${c==="ok"?"✓":c==="run"?"●":c==="bad"?"✕":"○"}</span>
       <span style="${c==='wait'?'color:#9aa7b4':''}">${st.n}</span><span class="mr">${icon}</span></div>`;
   }).join("");
@@ -499,7 +498,7 @@ function send(msg){
     const j=await r.json();
     if(!r.ok){thinking.querySelector(".bubble").innerHTML=`<span class="flag">未受理</span>${esc(j.reason||j.detail||"服务暂不可用")}`;return;}
     thinking.remove();
-    S.taskId=j.task_id;S.state="running";S.stage="agent-thinking";S.mr=null;S.doneIdx=-1;
+    S.taskId=j.task_id;S.state="running";S.stage="agent-thinking";S.doneIdx=-1;
     S.stepTimes={};S.start=Date.now();S.end=null;S.report=null;S.narrative=null;S.finalShown=false;
     renderAll();renderPane(S.tab);
     S.execCard=pushMsg("agent",`<div class="exec-card"><div class="t"><span class="gear">⚙</span>任务执行中…</div><div class="mini" id="mini"></div></div>`);
@@ -509,9 +508,9 @@ function send(msg){
 async function poll(){
   if(!S.taskId)return;
   let j;try{j=await(await fetch("/api/tasks/"+S.taskId)).json();}catch(e){return;}
-  S.state=j.status;S.stage=j.stage;S.mr=j.mr_stage;S.error=j.error;
+  S.state=j.status;S.stage=j.stage;S.error=j.error;
   if(j.narrative&&j.status!=="running"){S.narrative=j.narrative;}
-  const idx=STEP_OF[j.mr_stage||j.stage];
+  const idx=STEP_OF[j.stage];
   if(idx!=null)markStep(idx);
   renderBanner();renderCur();renderSteps();
   if(S.execCard)renderMiniExec();
@@ -519,10 +518,10 @@ async function poll(){
 }
 function renderMiniExec(){
   const box=S.execCard?.querySelector("#mini");if(!box)return;
-  const cur=S.state==="running"?Math.max(0,STEP_OF[S.mr||S.stage]??0):99;
+  const cur=S.state==="running"?Math.max(0,STEP_OF[S.stage]??0):99;
   box.innerHTML=STEPS.map((st,i)=>{
     const c=i<cur?"ok":i===cur?"run":"wait";
-    const label=c==="ok"?"✓ 已完成":c==="run"?"● 正在执行"+(STAGE_CN[S.mr]?": "+STAGE_CN[S.mr]:"…"):"○ 等待中";
+    const label=c==="ok"?"✓ 已完成":c==="run"?"● 正在执行"+(STAGE_CN[S.stage]?": "+STAGE_CN[S.stage]:"…"):"○ 等待中";
     return `<div class="row"><span class="si ${c}" style="width:18px;height:18px;font-size:10px">${c==="ok"?"✓":c==="run"?"●":"○"}</span>
       <span class="${c==='wait'?'':''}" style="${c==='wait'?'color:#9aa7b4':''}">${st.n}</span><span class="mr">${label}</span></div>`;
   }).join("");

@@ -3,3 +3,8 @@ fastapi==0.141.1
 pydantic==2.13.5
 uvicorn==0.54.0
 openai-agents==0.22.3
+pymysql==1.2.3
+cryptography==50.0.1
+pyarrow==25.0.1
+httpx==0.28.1
+socksio==1.0.0

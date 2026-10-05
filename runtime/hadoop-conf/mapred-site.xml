@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<configuration>
+  <property><name>mapreduce.framework.name</name><value>yarn</value></property>
+  <property><name>mapreduce.application.classpath</name><value>$HADOOP_MAPRED_HOME/share/hadoop/mapreduce/*,$HADOOP_MAPRED_HOME/share/hadoop/mapreduce/lib/*</value></property>
+  <property><name>mapreduce.map.memory.mb</name><value>512</value></property>
+  <property><name>mapreduce.reduce.memory.mb</name><value>512</value></property>
+  <property><name>mapreduce.map.java.opts</name><value>-Xmx384m</value></property>
+  <property><name>mapreduce.reduce.java.opts</name><value>-Xmx384m</value></property>
+  <property><name>yarn.app.mapreduce.am.resource.mb</name><value>768</value></property>
+  <property><name>yarn.app.mapreduce.am.command-opts</name><value>-Xmx512m</value></property>
+  <property><name>mapreduce.jobhistory.address</name><value>ml-governance-hadoop:10020</value></property>
+  <property><name>mapreduce.jobhistory.webapp.address</name><value>0.0.0.0:19888</value></property>
+  <property><name>mapreduce.jobhistory.intermediate-done-dir</name><value>/ml/jobhistory/tmp</value></property>
+  <property><name>mapreduce.jobhistory.done-dir</name><value>/ml/jobhistory/done</value></property>
+  <property><name>mapreduce.job.ubertask.enable</name><value>false</value></property>
+</configuration>

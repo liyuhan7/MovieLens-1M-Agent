@@ -1,0 +1,230 @@
+{
+  "schema_version": "migration-inventory-v1",
+  "created_at": "2026-10-04T13:17:33.070191+00:00",
+  "raw_manifest": {
+    "dataset_version": "raw-0a33ff7ea7b57022e902eb260463bd8b2627ab07069528c9cf9ae127aa91e0e2",
+    "tables": {
+      "movies": {
+        "sha256": "e256099e0a8f2d7cdc4b97ac94864c5f05795b929a97b045516ac86303931e18",
+        "bytes": 199463,
+        "encoding": "ISO-8859-1"
+      },
+      "ratings": {
+        "sha256": "1b3c4690b619d5f6bead9283d02ad12460da88bd3087ac2a93959bb37f4995d2",
+        "bytes": 28060211,
+        "encoding": "ISO-8859-1"
+      },
+      "users": {
+        "sha256": "c0397b2eb6210f14a683c65d15d7d927aaffac0c08bcbefddb8cc2063a988279",
+        "bytes": 154374,
+        "encoding": "ISO-8859-1"
+      }
+    }
+  },
+  "raw_files": [
+    {
+      "path": "data/users.dat",
+      "bytes": 154374,
+      "sha256": "c0397b2eb6210f14a683c65d15d7d927aaffac0c08bcbefddb8cc2063a988279",
+      "import_key": "359caf975008d261bb943740a5ccc329a332e1a8df9d9efc5114fc6958a75f46"
+    },
+    {
+      "path": "data/movies.dat",
+      "bytes": 199463,
+      "sha256": "e256099e0a8f2d7cdc4b97ac94864c5f05795b929a97b045516ac86303931e18",
+      "import_key": "e864e62810a2dc1791d2f0bd80413de462d5a87f03a90becbb90b4860d96774b"
+    },
+    {
+      "path": "data/ratings.dat",
+      "bytes": 28060211,
+      "sha256": "1b3c4690b619d5f6bead9283d02ad12460da88bd3087ac2a93959bb37f4995d2",
+      "import_key": "040fc9bf493dfc7cb57267cf553eb5af87807ded25270a413ca9af00588c1c74"
+    }
+  ],
+  "legacy_reports": [
+    {
+      "path": "outputs/iteration1-final/report.json",
+      "bytes": 7946,
+      "sha256": "b053cbfa82473899d9f57602dcffb7956d0290baec92aa469d6eefc316de34c6",
+      "import_key": "3239a4565f19e31a2a967f58831b4a736ab2e1d4ace2b6e7705110417ab5893e",
+      "archive_status": "LEGACY_INCOMPLETE",
+      "source_tag": "iteration1-final",
+      "reported_task_id": "task-8b6ef242cff8",
+      "reported_run_id": null,
+      "reported_rule_version": "rules-v1.0",
+      "reported_metric_version": null,
+      "formal_publication_verified": false
+    },
+    {
+      "path": "outputs/task-0923a2a403bd/report.json",
+      "bytes": 7946,
+      "sha256": "43cb41428d36360d230f7d4e0695770296d8d0c7e7805ed5178e7a6d4a05ff2f",
+      "import_key": "b2323342984244fcd56f08dbd4a8687a15080a008e5896e5986b16c52b99beea",
+      "archive_status": "LEGACY_INCOMPLETE",
+      "source_tag": "task-0923a2a403bd",
+      "reported_task_id": "task-0923a2a403bd",
+      "reported_run_id": null,
+      "reported_rule_version": "rules-v1.0",
+      "reported_metric_version": null,
+      "formal_publication_verified": false
+    },
+    {
+      "path": "outputs/task-154154-100/report.json",
+      "bytes": 7946,
+      "sha256": "2ed322ec10403287eb1810189f153b49c97f7c5f8124155f37b7ada2e433e2d8",
+      "import_key": "7f9db8eaa51374b895ebdaf18064acee658bb6f8f57072ddce181115af462e72",
+      "archive_status": "LEGACY_INCOMPLETE",
+      "source_tag": "task-154154-100",
+      "reported_task_id": "task-d98cfb6a4f43",
+      "reported_run_id": null,
+      "reported_rule_version": "rules-v1.0",
+      "reported_metric_version": null,
+      "formal_publication_verified": false
+    },
+    {
+      "path": "outputs/task-155553-692/report.json",
+      "bytes": 7946,
+      "sha256": "b4b2d37da8ba134d55dd1248e9cf5db6fac1636a4ef4861911bc2e6db3a62b77",
+      "import_key": "0ef9ce31a4c98a201a1bbe2dd74925bbfe222e5c09ad0bc05446496a8ec9a63b",
+      "archive_status": "LEGACY_INCOMPLETE",
+      "source_tag": "task-155553-692",
+      "reported_task_id": "task-55fc7c4ca839",
+      "reported_run_id": null,
+      "reported_rule_version": "rules-v1.0",
+      "reported_metric_version": null,
+      "formal_publication_verified": false
+    },
+    {
+      "path": "outputs/task-160028-692/report.json",
+      "bytes": 7946,
+      "sha256": "37bd9d88d7c2b6de5a2022fbb95abe4afa1ce08f87759234a26d172c25697d7a",
+      "import_key": "22ecf3a8f51a5356e4ad5ccb47a33989d88ffb7b2128aa0bf44c1d6e77f7d69b",
+      "archive_status": "LEGACY_INCOMPLETE",
+      "source_tag": "task-160028-692",
+      "reported_task_id": "task-62ceef4d2da2",
+      "reported_run_id": null,
+      "reported_rule_version": "rules-v1.0",
+      "reported_metric_version": null,
+      "formal_publication_verified": false
+    },
+    {
+      "path": "outputs/task-175418-412/report.json",
+      "bytes": 7946,
+      "sha256": "e66c82e54830f76bd7046a02df45c17e0e068a5c1baf18bc0cbf7b92c1389328",
+      "import_key": "908977063260a434d3b9a2fa308d48beb26b98328146f3a3c5825b3e047864c3",
+      "archive_status": "LEGACY_INCOMPLETE",
+      "source_tag": "task-175418-412",
+      "reported_task_id": "task-6fb0d2182bcb",
+      "reported_run_id": null,
+      "reported_rule_version": "rules-v1.0",
+      "reported_metric_version": null,
+      "formal_publication_verified": false
+    },
+    {
+      "path": "outputs/task-230321-424/report.json",
+      "bytes": 7946,
+      "sha256": "86b0909ebff7b2553bbecec2f1b3723e745c7bd8faec133d92413757a85cf524",
+      "import_key": "c381e4b40396268fb0596b8c87531559db9acc08bd38303ea2258900ae0d3da1",
+      "archive_status": "LEGACY_INCOMPLETE",
+      "source_tag": "task-230321-424",
+      "reported_task_id": "task-da8a92e9aa75",
+      "reported_run_id": null,
+      "reported_rule_version": "rules-v1.0",
+      "reported_metric_version": null,
+      "formal_publication_verified": false
+    },
+    {
+      "path": "outputs/task-231237-424/report.json",
+      "bytes": 7946,
+      "sha256": "815dbad0e3341204a64328c3e5629929b939bd5db924bff6cd7335f0c1ff9688",
+      "import_key": "4a3f57dccfe8b93d38ad233072fce8041a631b2a48435273efb187b03ef1877d",
+      "archive_status": "LEGACY_INCOMPLETE",
+      "source_tag": "task-231237-424",
+      "reported_task_id": "task-2b757eb5e862",
+      "reported_run_id": null,
+      "reported_rule_version": "rules-v1.0",
+      "reported_metric_version": null,
+      "formal_publication_verified": false
+    },
+    {
+      "path": "outputs/task-233008-004/report.json",
+      "bytes": 7946,
+      "sha256": "495e25f57c6c6c9b3205dcb64893f3667fcd036ea0b347740f4a9df2e04af4c3",
+      "import_key": "f34a61fcf5996280d39621d0255d097f59333bcbf13f0f6f098dad3beb7c1f6b",
+      "archive_status": "LEGACY_INCOMPLETE",
+      "source_tag": "task-233008-004",
+      "reported_task_id": "task-36d76057c750",
+      "reported_run_id": null,
+      "reported_rule_version": "rules-v1.0",
+      "reported_metric_version": null,
+      "formal_publication_verified": false
+    },
+    {
+      "path": "outputs/task-a205f5fa38b6/report.json",
+      "bytes": 7946,
+      "sha256": "46f1a297f788a16ee39ed22edc1952445fbbc3d50ff632dc71c1e29d4385e1b3",
+      "import_key": "b19c52678f5c85efa8e7b40446c05b27f1c3265d3764245eb4f003467477375c",
+      "archive_status": "LEGACY_INCOMPLETE",
+      "source_tag": "task-a205f5fa38b6",
+      "reported_task_id": "task-034c10ad4d2c",
+      "reported_run_id": null,
+      "reported_rule_version": "rules-v1.0",
+      "reported_metric_version": null,
+      "formal_publication_verified": false
+    }
+  ],
+  "other_files": [
+    {
+      "path": "outputs/registry.json",
+      "bytes": 5148,
+      "sha256": "e74737891373cdd251005ca661e4f3deb7dc0425b621e429cc2261b7d2087b12",
+      "import_key": "c749ebd9912f128399e08818c5f4b4cec387a30329d7bbd396ad52b6325eab1f"
+    },
+    {
+      "path": "outputs/agent_memory.db",
+      "bytes": 1847296,
+      "sha256": "81d08584551568023f597160d00f7be6a8e965e94e4b92a7ec6cd421c50ab6e7",
+      "import_key": "19a63103829fd9b7749ae9a2467b3f1febeddfcd83f488742fe29ea113c9d19b"
+    }
+  ],
+  "execution": {
+    "files": {
+      "governance/__init__.py": "aa5fbb96097938e45899781e6d38937bbe6c768bcf67e2bc6894d38786c6cb9a",
+      "governance/artifacts.py": "3d36091b01af5aae226951bcd1cb26d6a7403e06d9c8ea135a9e0fddf94dd5e0",
+      "governance/build_identity.py": "197a8e34ead482206190562e0abf208f0778ea5edc3cab942b88cdf99c40bf7e",
+      "governance/cli.py": "ff018d3e4c5a05bc27d55bd22d5a4399bda51c0b996fa2829789bbb3e514a651",
+      "governance/indexing.py": "7258d4ff9b4b0a7c12ef99c006d5d43512935e1c29dba9279496fa1b394a7b25",
+      "governance/manifest.py": "8abd8447a66a420718a982eb31725601de85ae1f428269bc4131c2b747577e03",
+      "governance/provenance.py": "a777136a4fadd823e733f23b90c3cc660fd5c60bf68af7a0524b826c4d4bc74f",
+      "governance/publication.py": "41799bfaf2e8fb15449f7ec6012dc4419437282bbf87fbfeb8f0fd9f07d41e25",
+      "governance/raw.py": "c3a3d3fd2f8c349fe962f2cbda4731b3ed40c4edddf485c671713a8814323b30",
+      "governance/reconciliation.py": "16e0b76a2d6300b7f27d359ba9c6e6897ec7417bf03068efe9cb33a1fa5b3049",
+      "governance/service.py": "096a25a1168c917096d8d1f3e66008f108dd585291ea28bea40cc72f88cb6d1e",
+      "governance/validation.py": "c63a1a8b140cbfdf1fcdc464ca6c1a646e834dd98dc30cabfffa543e280f9e40",
+      "governance/worker.py": "48d09e70a05b7687673df7baf0e0371b2407d74f98c8c3fb750229acce35236e",
+      "hadoop/build/iter1.jar": "373a6a0c912b0aa01550ff63c1b664891fe3183f742e8a1b665f315cddc52fd4",
+      "hadoop/src/main/java/mliter1/IterationOne.java": "d44007a217fe9f161fc16945d6b2a13453cf769169ea9f14b2c52eddd75ced50",
+      "metadata/__init__.py": "a46748866ec4e4667ff900b195e68c214e6495657691b5fa19222b48459b0609",
+      "metadata/connection.py": "240fae6d19795ad35b59ad2ea6dc4439968d4511c27480ba0b4cfc83c52d3ee2",
+      "metadata/store.py": "9188a199ff8f9e7fd9901fd90f8499d7a965be510f5491a8e7cc86a1c3085416",
+      "pipeline/execution.py": "5585ec1d79bf8bdb0213f77253e4b8a8f6e0c7023540554157dc2a8b581cb34c",
+      "pipeline/run_pipeline.py": "8dedab8d94a3198bae47432bde3bb283931a2310bad9c78b73b471d5acada014",
+      "pipeline/yarn.py": "eb4baf21c7c3aaa7c4cbefe6fc8d1740246e05914fdbd31c928a6fdf4b513826",
+      "requirements.txt": "2d8714ef944bb4368f23a67fa80b7375a01e930da743e4f05bf4664f65ccef07",
+      "runtime/compose.governance.yaml": "45f3bae40b5cae72d9d3a3646be5abb2d47c415e8623f32ebdced43fb2fecd58",
+      "runtime/hadoop-conf/core-site.xml": "14e1bb56448b9b012f52d10c78ea99eca99b034b94488e35687d75767b78f353",
+      "runtime/hadoop-conf/hdfs-site.xml": "6a29cefb7c3f54d8200b7c1b3f9eceeeebd39a6fce4895743670499b3ae1b9be",
+      "runtime/hadoop-conf/mapred-site.xml": "b356652dce874b494e55b921b1dcfb16fa68be7746839dd8fdc5e979ec6175f6",
+      "runtime/hadoop-conf/yarn-site.xml": "5279174f7775d565d51041d200485fe029aa9a767b1408cf6f0d88f6771b5bf7",
+      "runtime/requirements-worker.txt": "9961bbbc5d2d29cbea533268e3e5fe52c873729495f8700541406401b286cf76",
+      "runtime/start-hadoop.sh": "32d197d0112e595a5794444c0b282403a7b38a88c745d25102a97cf647e88430",
+      "storage/__init__.py": "681498f331fdb165ac0f5a5f80d4bd586f9d1708c5f9ae612af5ae5d70a133b7",
+      "storage/hdfs.py": "aa013e4a4ab800f1dda2f42ed072cb4fb27b9050f4dbfcdd374908f739aa5fa9"
+    },
+    "images": {
+      "ML_HADOOP_IMAGE": "sha256:bbe9c16facf36c49d96ae9b4e708e0538342251ece888cc12813ae36c1e1a5bb",
+      "ML_WORKER_IMAGE": "sha256:61ed5c96a5b0179c59749520fb8f54423b935f4c21125aff3d1f986c916822d5"
+    }
+  },
+  "scope": "inventory only; original reports and registry retained; no legacy result promoted to PUBLISHED"
+}

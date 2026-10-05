@@ -1,0 +1,12 @@
+.git
+.venv
+venv
+outputs
+data
+**/.env
+**/.env.*
+**/__pycache__
+**/*.pyc
+runtime/hadoop-*.tar.gz
+hadoop/build/*
+!hadoop/build/iter1.jar

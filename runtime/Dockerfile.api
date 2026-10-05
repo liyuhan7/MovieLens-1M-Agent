@@ -1,0 +1,21 @@
+ARG WORKER_BASE
+FROM ${WORKER_BASE}
+WORKDIR /work
+COPY requirements.txt /work/requirements.txt
+RUN pip install --no-cache-dir -r /work/requirements.txt
+COPY agent/ /work/agent/
+COPY governance/ /work/governance/
+COPY metadata/ /work/metadata/
+COPY storage/ /work/storage/
+COPY pipeline/ /work/pipeline/
+COPY schemas/ /work/schemas/
+COPY web/ /work/web/
+COPY docs/ /work/docs/
+COPY hadoop/src/ /work/hadoop/src/
+COPY hadoop/build/iter1.jar /work/hadoop/build/iter1.jar
+COPY runtime/compose.governance.yaml runtime/start-hadoop.sh runtime/requirements-worker.txt /work/runtime/
+COPY runtime/hadoop-conf/ /work/runtime/hadoop-conf/
+LABEL ml.governance.schema="5" ml.governance.admission-control="1"
+EXPOSE 8787
+HEALTHCHECK --interval=15s --timeout=5s --start-period=20s --retries=5 CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8787/api/readiness',timeout=4).read()"
+ENTRYPOINT ["python", "-m", "uvicorn", "agent.server:app", "--host", "0.0.0.0", "--port", "8787", "--workers", "1"]

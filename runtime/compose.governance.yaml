@@ -1,0 +1,103 @@
+name: ml-governance
+services:
+  mysql:
+    image: mysql@sha256:6ea90827b1100f8f2ae306a539f86d2c264a26ed435a2a9f75551dd5c3aeb242
+    container_name: ml-governance-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${ML_MYSQL_ROOT_PASSWORD:?Run prepare-governance.ps1 first}
+      MYSQL_DATABASE: ${ML_MYSQL_DATABASE:-ml_governance}
+      MYSQL_USER: ${ML_MYSQL_USER:-ml_governance}
+      MYSQL_PASSWORD: ${ML_MYSQL_PASSWORD:?Run prepare-governance.ps1 first}
+    ports:
+      - "127.0.0.1:${ML_MYSQL_PORT:-13306}:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping --host=127.0.0.1 --silent"]
+      interval: 5s
+      timeout: 3s
+      retries: 40
+    restart: unless-stopped
+  hadoop:
+    # prepare-hadoop.ps1 records the verified image ID in ignored runtime/.env.
+    image: ${ML_HADOOP_IMAGE:-movielens-governance-hadoop:3.3.6}
+    container_name: ml-governance-hadoop
+    hostname: ml-governance-hadoop
+    profiles: ["compute"]
+    entrypoint: ["bash", "/bootstrap/start-hadoop.sh"]
+    environment:
+      HADOOP_CONF_DIR: /state/conf
+      HADOOP_MAPRED_HOME: /opt/hadoop-3.3.6
+      HADOOP_LOG_DIR: /state/logs
+      HADOOP_PID_DIR: /tmp/hadoop-pids
+      HADOOP_HEAPSIZE: "256"
+      HDFS_NAMENODE_USER: root
+      HDFS_DATANODE_USER: root
+      YARN_RESOURCEMANAGER_USER: root
+      YARN_NODEMANAGER_USER: root
+    ports:
+      - "127.0.0.1:19000:9000"
+      - "127.0.0.1:19870:9870"
+      - "127.0.0.1:18088:8088"
+      - "127.0.0.1:19888:19888"
+    volumes:
+      - ./hadoop-conf:/config-overrides:ro
+      - ./start-hadoop.sh:/bootstrap/start-hadoop.sh:ro
+      - ..:/work
+      - hadoop-state:/state
+    mem_limit: 6g
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8088/ws/v1/cluster/info >/dev/null && curl -fsS http://localhost:9870/jmx?qry=Hadoop:service=NameNode,name=NameNodeStatus >/dev/null && hdfs dfs -test -d /ml"]
+      interval: 15s
+      timeout: 10s
+      retries: 20
+      start_period: 40s
+    restart: unless-stopped
+  api:
+    image: ${ML_API_IMAGE:-movielens-governance-api:5}
+    container_name: ml-governance-api
+    profiles: ["api"]
+    environment:
+      ML_MYSQL_HOST: mysql
+      ML_MYSQL_PORT: "3306"
+      ML_MYSQL_DATABASE: ${ML_MYSQL_DATABASE:-ml_governance}
+      ML_MYSQL_USER: ${ML_MYSQL_USER:-ml_governance}
+      ML_MYSQL_PASSWORD: ${ML_MYSQL_PASSWORD:?Run prepare-governance.ps1 first}
+      ML_JOBHISTORY_URL: http://hadoop:19888
+      ML_HADOOP_IMAGE: ${ML_HADOOP_IMAGE:?Prepare Hadoop image identity first}
+      ML_WORKER_IMAGE: ${ML_WORKER_IMAGE:?Prepare worker image identity first}
+      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:-}
+      DEEPSEEK_MODEL: ${DEEPSEEK_MODEL:-deepseek-chat}
+    ports:
+      - "127.0.0.1:${ML_API_PORT:-8787}:8787"
+    volumes:
+      - ../data:/work/data:ro
+      - ../outputs:/work/outputs
+    depends_on:
+      mysql:
+        condition: service_healthy
+    mem_limit: 2g
+    restart: unless-stopped
+  worker:
+    image: ${ML_WORKER_IMAGE:-movielens-governance-worker:3.3.6}
+    container_name: ml-governance-worker
+    profiles: ["worker"]
+    environment:
+      ML_MYSQL_HOST: mysql
+      ML_MYSQL_PORT: "3306"
+      ML_MYSQL_DATABASE: ${ML_MYSQL_DATABASE:-ml_governance}
+      ML_MYSQL_USER: ${ML_MYSQL_USER:-ml_governance}
+      ML_MYSQL_PASSWORD: ${ML_MYSQL_PASSWORD:?Run prepare-governance.ps1 first}
+      ML_YARN_URL: http://hadoop:8088
+    volumes:
+      - ..:/work
+    depends_on:
+      mysql:
+        condition: service_healthy
+      hadoop:
+        condition: service_healthy
+    mem_limit: 2g
+    restart: unless-stopped
+volumes:
+  mysql-data:
+  hadoop-state:

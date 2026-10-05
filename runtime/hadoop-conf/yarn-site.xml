@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<configuration>
+  <property><name>yarn.resourcemanager.hostname</name><value>ml-governance-hadoop</value></property>
+  <property><name>yarn.resourcemanager.bind-host</name><value>0.0.0.0</value></property>
+  <property><name>yarn.resourcemanager.webapp.address</name><value>0.0.0.0:8088</value></property>
+  <property><name>yarn.nodemanager.address</name><value>0.0.0.0:8041</value></property>
+  <property><name>yarn.nodemanager.aux-services</name><value>mapreduce_shuffle</value></property>
+  <property><name>yarn.nodemanager.env-whitelist</name><value>JAVA_HOME,HADOOP_COMMON_HOME,HADOOP_HDFS_HOME,HADOOP_CONF_DIR,CLASSPATH_PREPEND_DISTCACHE,HADOOP_YARN_HOME,HADOOP_MAPRED_HOME,PATH,LANG,TZ</value></property>
+  <property><name>yarn.nodemanager.resource.memory-mb</name><value>4096</value></property>
+  <property><name>yarn.nodemanager.resource.cpu-vcores</name><value>4</value></property>
+  <property><name>yarn.scheduler.minimum-allocation-mb</name><value>256</value></property>
+  <property><name>yarn.scheduler.maximum-allocation-mb</name><value>4096</value></property>
+  <property><name>yarn.nodemanager.vmem-check-enabled</name><value>false</value></property>
+  <property><name>yarn.nodemanager.pmem-check-enabled</name><value>false</value></property>
+  <property><name>yarn.nodemanager.local-dirs</name><value>/state/nm-local</value></property>
+  <property><name>yarn.nodemanager.log-dirs</name><value>/state/nm-logs</value></property>
+  <property><name>yarn.log-aggregation-enable</name><value>true</value></property>
+  <property><name>yarn.nodemanager.remote-app-log-dir</name><value>/ml/yarn-logs</value></property>
+  <property><name>yarn.resourcemanager.recovery.enabled</name><value>true</value></property>
+  <property><name>yarn.resourcemanager.store.class</name><value>org.apache.hadoop.yarn.server.resourcemanager.recovery.FileSystemRMStateStore</value></property>
+  <property><name>yarn.resourcemanager.fs.state-store.uri</name><value>file:///state/rm</value></property>
+  <property><name>yarn.nodemanager.recovery.enabled</name><value>true</value></property>
+  <property><name>yarn.nodemanager.recovery.dir</name><value>/state/nm-recovery</value></property>
+</configuration>

@@ -1,0 +1,30 @@
+# Optional client attachment to an existing HiveServer2, not a second data store.
+# The operator supplies a verified Hive client compatible with the target server/JVM.
+services:
+  api:
+    environment:
+      HIVE_HOME: /opt/hive
+      PATH: /opt/hive/bin:/opt/java/bin:/opt/hadoop-3.3.6/bin:/usr/local/bin:/usr/bin:/bin
+      ML_HIVE_JDBC_URL: ${ML_HIVE_JDBC_URL:?Provide read-only HiveServer2 JDBC URL}
+      ML_HIVE_USER: ${ML_HIVE_USER:-ml_history}
+      ML_HDFS_URI: ${ML_HDFS_URI:-hdfs://ml-governance-hadoop:9000}
+    volumes:
+      - ${ML_HIVE_CLIENT_HOME:?Provide verified Hive client directory}:/opt/hive:ro
+  history-admin:
+    image: ${ML_API_IMAGE:?Prepare API image first}
+    profiles: ["history-admin"]
+    entrypoint: ["python", "-m", "governance.cli"]
+    environment:
+      ML_MYSQL_HOST: mysql
+      ML_MYSQL_PORT: "3306"
+      ML_MYSQL_DATABASE: ${ML_MYSQL_DATABASE:-ml_governance}
+      ML_MYSQL_USER: ${ML_MYSQL_USER:-ml_governance}
+      ML_MYSQL_PASSWORD: ${ML_MYSQL_PASSWORD:?Prepare governance credentials first}
+      HIVE_HOME: /opt/hive
+      PATH: /opt/hive/bin:/opt/java/bin:/opt/hadoop-3.3.6/bin:/usr/local/bin:/usr/bin:/bin
+      ML_HIVE_ADMIN_JDBC_URL: ${ML_HIVE_ADMIN_JDBC_URL:-}
+      ML_HIVE_ADMIN_USER: ${ML_HIVE_ADMIN_USER:-ml_history_admin}
+      ML_HDFS_URI: ${ML_HDFS_URI:-hdfs://ml-governance-hadoop:9000}
+    volumes:
+      - ${ML_HIVE_CLIENT_HOME:?Provide verified Hive client directory}:/opt/hive:ro
+      - ../outputs:/work/outputs

@@ -1,0 +1,16 @@
+{
+  "version": "metrics-v2.1",
+  "count_scope": "All committed output partitions, every source record once",
+  "missing_values": ["whitespace", "NULL after trim"],
+  "complete": {"ratings_fields": 4, "users_fields": 5, "movies_fields": ["title", "genres"], "formula": "100 * present_required_fields / (N * required_field_count)"},
+  "unique": {"ratings_key": ["user_id", "movie_id"], "users_key": ["user_id"], "movies_key": ["trimmed lowercase title without year", "year"], "invalid_key": "source_record_id", "formula": "100 * (1 - excess_duplicate_records / N)"},
+  "accurate": "Java domain/reference predicate; not real-world factual accuracy",
+  "consistent": "Java schema, enumeration and seconds-format predicate",
+  "up_to_date": {"ratings": "Parseable seconds within declared inclusive UTC range", "users": null, "movies": null},
+  "time_range_seconds": [631152000, 1047772799],
+  "split_seconds": {"train_end_inclusive": 1009843200, "valid_end_inclusive": 1025481600},
+  "table_composite": "Mean of applicable dimensions",
+  "dataset_weights": {"ratings": 0.6, "users": 0.2, "movies": 0.2},
+  "empty_table": "Applicable dimensions zero, inapplicable dimensions null",
+  "rounding": "Two decimal places, preserve integer counts"
+}

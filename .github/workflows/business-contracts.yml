@@ -1,0 +1,38 @@
+name: Business contracts
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: business-contracts-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  modules:
+    name: Python business modules
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.14'
+          cache: pip
+          cache-dependency-path: requirements.txt
+      - name: Install declared dependencies
+        run: python -m pip install -r requirements.txt
+      - name: Verify business module contracts
+        run: python runtime/check-business.py
+      - name: Preserve verification evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: business-verification-${{ github.run_id }}-${{ github.run_attempt }}
+          path: outputs/business-validation/
+          if-no-files-found: warn
+          retention-days: 14

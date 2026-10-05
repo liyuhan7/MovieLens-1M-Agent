@@ -1,0 +1,16 @@
+{
+  "version": "metrics-v2.0",
+  "count_scope": "Every committed reducer partition; count every input record once",
+  "missing_values": ["", "NULL"],
+  "complete": {"ratings_fields": 4, "users_fields": 5, "movies_fields": ["title", "genres"], "formula": "100 * present_required_fields / (N * required_field_count)"},
+  "unique": {"ratings_key": ["user_id", "movie_id"], "users_key": ["user_id"], "movies_key": ["normalized_title", "year"], "formula": "100 * (1 - excess_duplicate_records / N)"},
+  "accurate": "Existing Java value-domain and reference checks; not factual real-world accuracy",
+  "consistent": "Existing Java schema, enumeration and seconds-format checks",
+  "up_to_date": {"ratings": "Parseable seconds within the declared data range", "users": null, "movies": null},
+  "time_range_seconds": [631152000, 1047686399],
+  "split_seconds": {"train_end_inclusive": 1009843200, "valid_end_inclusive": 1025481600},
+  "table_composite": "Mean of applicable dimensions",
+  "dataset_weights": {"ratings": 0.6, "users": 0.2, "movies": 0.2},
+  "empty_table": "Applicable dimensions equal zero; inapplicable dimensions remain null",
+  "rounding": "Report scores use two decimal places; retain integer numerators and denominators"
+}

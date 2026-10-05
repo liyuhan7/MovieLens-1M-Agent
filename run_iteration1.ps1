@@ -1,5 +1,5 @@
 ﻿# -*- coding: utf-8 -*-
-# 迭代一 一键启动/验证脚本(Windows PowerShell)。
+# 一键启动/验证脚本(Windows PowerShell)。
 #
 # 用法:
 #   powershell -ExecutionPolicy Bypass -File run_iteration1.ps1 build    # 编译 Hadoop jar(本机 JDK8)

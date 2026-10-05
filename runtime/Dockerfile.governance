@@ -1,0 +1,5 @@
+ARG HADOOP_BASE=movielens-hadoop:3.3.6
+FROM ${HADOOP_BASE}
+# Hadoop daemon scripts require ps; the original local-job image does not contain it.
+RUN sed -i 's|http://deb.debian.org|https://deb.debian.org|g; s|http://security.debian.org|https://security.debian.org|g' /etc/apt/sources.list \
+    && apt-get update && apt-get install -y --no-install-recommends procps && rm -rf /var/lib/apt/lists/*
